@@ -1,0 +1,6 @@
+bokeh==2.1.1
+dask[complete]==2.19.0
+distributed==2.19.0
+django==3.0.7
+djangorestframework==3.11.0
+django-picklefield==3.0.1
