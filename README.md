@@ -145,6 +145,15 @@ pip install -r requirements.txt
 uvicorn main:app
 ```
 
+You can use the `http://localhost:8000/docs/` to post to `http://localhost:8000/sum_csv` or with a curl like above.
+
+```bash
+curl -X POST "http://localhost:8000/sum_csv" 
+     -H "accept: application/json"
+     -H "Content-Type: multipart/form-data"
+     -F "file=@/path/to/file.csv;type=text/csv"
+```
+
 ## Final thoughts
 
 In the end, the correct solutions depends on the actual use case and its details. I have presented a bare bones
