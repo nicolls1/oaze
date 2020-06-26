@@ -124,7 +124,7 @@ curl -X POST \
  http://localhost:8000/csv-documents/ 
 ```
 
-#### No Storage Solution: 
+#### No Storage Solution: Fastapi + Dask
 
 If the only need of this solution is in processing the data and posting the results and there is no value in storing the 
 data of past tasks then a simpler solution is possible. Also, if we know that the max number of lines in a file is 
