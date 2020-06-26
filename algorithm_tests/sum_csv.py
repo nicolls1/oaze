@@ -1,6 +1,7 @@
 import csv
 import decimal
 import math
+from multiprocessing import Process, Queue, Manager
 import time
 
 import dask.dataframe as dd
@@ -135,8 +136,90 @@ def sum_pandas(file_name):
 
 
 def sum_dask_pandas(file_name):
+    # Starts a dask local cluster with 2 workers/processes, running on a 4 core machine, used in dask pandas
+    client = Client(n_workers=2, threads_per_worker=1, memory_limit='1GB')
+
     df = dd.read_csv(file_name)
     return '{:.2f}'.format(df['amount EUR'].sum().compute())
+
+
+def do_work_group(in_queue, out_list):
+    while True:
+        amount_eur_index, lines = in_queue.get()
+
+        # exit signal
+        if lines is None:
+            return
+
+        result = [float(line.strip().split(',')[amount_eur_index]) for line in lines]
+
+        out_list.append(math.fsum(result))
+
+
+def sum_multiprocess_group_1000(file_name):
+    num_workers = 2
+    pool = []
+    manager = Manager()
+    results_list = manager.list()
+    in_queue = Queue()
+    for i in range(num_workers):
+        p = Process(target=do_work_group, args=(in_queue, results_list))
+        p.start()
+        pool.append(p)
+
+    with open(file_name) as csv_file:
+        headers = next(csv_file).strip().split(',')
+        amount_eur_index = headers.index('amount EUR')
+
+        group = []
+        for line in csv_file:
+            group.append(line)
+            if len(group) >= 1000:
+                in_queue.put((amount_eur_index, group))
+                group = []
+
+        if len(group) != 0:
+            in_queue.put((amount_eur_index, group))
+        for i in range(num_workers):
+            in_queue.put((None, None))
+
+    for p in pool:
+        p.join()
+
+    return '{:.2f}'.format(math.fsum(results_list))
+
+
+def sum_multiprocess_group_100(file_name):
+    num_workers = 2
+    pool = []
+    manager = Manager()
+    results_list = manager.list()
+    in_queue = Queue()
+    for i in range(num_workers):
+        p = Process(target=do_work_group, args=(in_queue, results_list))
+        p.start()
+        pool.append(p)
+
+    with open(file_name) as csv_file:
+        headers = next(csv_file).strip().split(',')
+        amount_eur_index = headers.index('amount EUR')
+
+        group = []
+        for line in csv_file:
+            group.append(line)
+            if len(group) >= 1000:
+                in_queue.put((amount_eur_index, group))
+                group = []
+
+        if len(group) != 0:
+            in_queue.put((amount_eur_index, group))
+        for i in range(num_workers):
+            in_queue.put((None, None))
+
+    for p in pool:
+        p.join()
+
+    return '{:.2f}'.format(math.fsum(results_list))
 
 
 def plot_result_times(options, files, times, save_to='times.png', title='Time Plot'):
@@ -183,9 +266,6 @@ def plot_result_time_per_row(options, files, times, save_to='scaled_times.png', 
 
 
 def time_algorithms():
-    # Starts a dask local cluster with 2 workers/processes, running on a 4 core machine
-    client = Client(n_workers=2, threads_per_worker=1, memory_limit='1GB')
-
     folder = '../test_files/'
     files = ['1000.csv', '10_000.csv', '100_000.csv', '1_000_000.csv', '10_000_000.csv', '100_000_000.csv']
     expected_sums = ['4800.76', '48007.60', '480076.00', '4800760.00', '48007600.00', '480076000.00']
@@ -193,7 +273,7 @@ def time_algorithms():
     file_reading_options = [read_file, read_file_csv, read_file_split, read_file_pandas]
     file_sum_options = [sum_csv_int, sum_csv_int_comprehension, sum_csv_fsum, sum_csv_decimal,
                         sum_split_int, sum_split_int_comprehension, sum_split_fsum, sum_split_decimal, sum_pandas,
-                        sum_dask_pandas]
+                        sum_dask_pandas, sum_multiprocess_group_1000, sum_multiprocess_group_100]
 
     ###
     # Run and time reading options
@@ -214,6 +294,7 @@ def time_algorithms():
     print(reading_result_times)
 
     '''
+    # times used to generate charts in repo
     reading_result_times = [
         [0.0027282238006591797, 0.003737211227416992, 0.019328832626342773, 0.13662481307983398, 1.3230268955230713, 12.718315839767456],
         [0.0010440349578857422, 0.00943899154663086, 0.08784317970275879, 0.8659260272979736, 8.933452129364014, 86.89902019500732],
@@ -250,6 +331,7 @@ def time_algorithms():
     print(sum_result_times)
 
     '''
+    # times used to generate charts in repo
     sum_result_times = [
         [0.03610396385192871, 0.023204803466796875, 0.1529839038848877, 1.4663259983062744, 12.929994821548462, 129.0347831249237],
         [0.0013382434844970703, 0.012452840805053711, 0.1243891716003418, 1.2713370323181152, 12.774251937866211, 128.68864798545837],
@@ -261,6 +343,8 @@ def time_algorithms():
         [0.0012021064758300781, 0.008955001831054688, 0.0827629566192627, 0.9249470233917236, 9.426769018173218, 120.88330912590027],
         [0.08045792579650879, 0.010688066482543945, 0.057878971099853516, 0.4840562343597412, 4.66231107711792, 49.72357201576233],
         [0.05176115036010742, 0.04227614402770996, 0.10026288032531738, 0.6557419300079346, 3.360474109649658, 29.80898904800415],
+        [0.034432172775268555, 0.04058694839477539, 0.10614895820617676, 0.8746130466461182, 7.668174743652344, 113.19796800613403],
+        [0.05296802520751953, 0.037930965423583984, 0.09582901000976562, 0.7705349922180176, 9.90707278251648, 110.95649099349976],
     ]
     '''
 
@@ -272,7 +356,6 @@ def time_algorithms():
                              [result_times[1:] for result_times in sum_result_times],
                              save_to='sum_times_per_row_no_1000.png',
                              title='Clock Time Summing Files Per Row (No 1000)')
-
 
 if __name__ == "__main__":
     time_algorithms()

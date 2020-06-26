@@ -9,7 +9,7 @@ class DaskTask(models.Model):
     result = PickledObjectField(null=True)
     start_time = models.DateTimeField(default=timezone.now)
     end_time = models.DateTimeField(null=True)
-    duration = models.PositiveIntegerField()
+    duration_ms = models.PositiveIntegerField(null=True)
 
     def __str__(self):
         return self.task_key

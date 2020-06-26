@@ -34,6 +34,7 @@ INSTALLED_APPS = [
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.staticfiles',
+    'anymail',
     'rest_framework',
     'dasktasks',
     'oaze',
@@ -126,3 +127,15 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [],
 }
 
+if DEBUG:
+    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+else:
+    EMAIL_BACKEND = 'anymail.backends.mailgun.EmailBackend'
+
+ANYMAIL = {
+    'MAILGUN_API_KEY': os.environ.get('MAILGUN_API_KEY', ''),
+    'MAILGUN_SENDER_DOMAIN': os.environ.get('MAILGUN_SENDER_DOMAIN', 'localhost'),
+}
+DEFAULT_FROM_EMAIL = 'Oaze Project <noreply@oaze.com>'
+SERVER_EMAIL = 'noreply@oaze.com'
+TASK_INFO_EMAIL = os.environ.get('TASK_INFO_EMAIL', 'tasks@oaze.com')

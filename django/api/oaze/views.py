@@ -1,40 +1,28 @@
-from dask import delayed
+from rest_framework import status
 from rest_framework import viewsets
-from rest_framework.decorators import action
 from rest_framework.response import Response
 
 from dasktasks.daskmanager import DaskManager
-from dasktasks.serializers import DaskTaskSerializer
-from oaze.models import CsvDocument, SumAmountEuroTask
-from oaze.serializers import CsvDocumentSerializer, SumAmountEuroTaskSerializer
+from graphs.graphs import sum_csv_graph
+from oaze.models import CsvDocument
+from oaze.serializers import CsvDocumentSerializer
 
 
 class CsvDocumentViewSet(viewsets.ModelViewSet):
     serializer_class = CsvDocumentSerializer
     queryset = CsvDocument.objects.all()
 
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        csv_document = serializer.save()
 
-class SumAmountEuroTaskViewSet(viewsets.ModelViewSet):
-    serializer_class = SumAmountEuroTaskSerializer
-    queryset = SumAmountEuroTask.objects.all()
+        graph = sum_csv_graph(serializer.data['file'])
+        dask_task = DaskManager().compute(graph)
+        csv_document.sum_task = dask_task
+        csv_document.save()
 
-    @action(['post'], detail=False)
-    def process_documents(self, request, pk=None):
-        pass
-        '''
-        # Get objects from database
-        numbers = list(Number.objects.all().values_list('value', flat=True))
+        response_serializers = self.get_serializer(csv_document)
 
-        # Build graph
-        squares = []
-        for number in numbers:
-            number_squared = delayed(lambda n: n**2)(number)
-            squares.append(number_squared)
-        sum_squares = delayed(sum)(squares)
-
-        # Submit graph to Dask
-        dask_task = DaskManager().compute(sum_squares)
-
-        # Return task
-        return Response(DaskTaskSerializer(instance=dask_task, context=self.get_serializer_context()).data)
-        '''
+        headers = self.get_success_headers(serializer.data)
+        return Response(response_serializers.data, status=status.HTTP_201_CREATED, headers=headers)

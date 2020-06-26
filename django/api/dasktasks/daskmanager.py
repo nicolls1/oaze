@@ -1,7 +1,8 @@
+from django.core.mail import send_mail
 import logging
 import traceback
 
-from dask.distributed import Client, LocalCluster, Future
+from dask.distributed import Client, Future
 from django.conf import settings
 from django.utils import timezone
 
@@ -43,15 +44,34 @@ class DaskManager(metaclass=Singleton):
             task.status = future.status
             task.result = future.result()
             task.end_time = timezone.now()
-            task.duration = int((task.end_time-task.start_time).total_seconds()*1000)
+            task.duration_ms = int((task.end_time-task.start_time).total_seconds()*1000)
             task.save()
         elif future.status == 'error':
             task.status = future.status
             task.result = traceback.extract_tb(future.traceback()) + [future.exception()]
             task.end_time = timezone.now()
-            task.duration = int((task.end_time-task.start_time).total_seconds()*1000)
+            task.duration_ms = int((task.end_time-task.start_time).total_seconds()*1000)
             task.save()
-            # will cause exception to be thrown here
-            future.result()
         else:
-            logger.error('Task completed with unhandled status: ' + future.status)
+            logger.error(f'Task completed with unhandled status: {future.status}')
+
+        # send email that a task has finished, could be much more complex, just keeping it simple
+        if future.status == 'finished':
+            # The format requested, I would do a more generic message for all tasks by just passing task id and
+            # a preview of the result, but if this is just a micro service for this particular task then it can work
+            result = future.result()
+            formatted_time = task.end_time.strftime("%d/%m/%Y %H:%M")
+            message = f'{formatted_time} - {result["lines"]} entries processed, sum: {result["sum"]}'
+        elif future.status == 'error':
+            message = f'Task id {task.task_key} failed.'
+        else:
+            message = f'Task id {task.task_key} completed with unknown status: {future.status}'
+
+        send_mail(
+            'Task Completed',
+            message,
+            settings.DEFAULT_FROM_EMAIL,
+            [settings.TASK_INFO_EMAIL],
+            fail_silently=False,
+        )
+
