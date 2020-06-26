@@ -107,7 +107,8 @@ python manage.py migrate
 
 Mailgun is used (https://www.mailgun.com/) and requires `MAILGUN_API_KEY` and `MAILGUN_SENDER_DOMAIN` environment
 variables to be set. Also, in `django/api/api/settings.py` DEBUG must be set to False. If these are not set, the
-server will just log the email. You can set where the email is sent to with the environment variable `TASK_INFO_EMAIL`.
+server will just log the email to stdout. You can set where the email is sent to with the environment variable 
+`TASK_INFO_EMAIL`.
 
 ##### Run
 
@@ -150,7 +151,7 @@ pip install -r requirements.txt
 I used fastapi-mail and it requires a gmail account. Also, if two factor authentication is enabled then you will need
 to go through this https://support.google.com/accounts/answer/185833?p=InvalidSecondFactor. You can set the receiver 
 email with the env var `TASK_STATUS_EMAIL`. The seder email with `ADMIN_EMAIL`. The sender email password with 
-`ADMIN_EMAIL_PASSWORD`.
+`ADMIN_EMAIL_PASSWORD`. If no email is setup it will log to stdout on the server.
 
 ##### Run
 
