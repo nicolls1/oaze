@@ -23,7 +23,7 @@ class Singleton(type):
 class DaskManager(metaclass=Singleton):
     def __init__(self):
         if settings.DASK_SCHEDULER_HOST is None:
-            self.client = Client(preload='daskworkerinit.py', n_workers=2, threads_per_worker=1, memory_limit='1GB')
+            self.client = Client(preload='daskworkerinit.py', n_workers=2, threads_per_worker=1, memory_limit='4GB')
         else:
             self.client = Client(settings.DASK_SCHEDULER_HOST+':'+settings.DASK_SCHEDULER_PORT)
 

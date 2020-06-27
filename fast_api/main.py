@@ -22,7 +22,7 @@ class Settings(BaseSettings):
 
 settings = Settings()
 app = FastAPI()
-client = Client(n_workers=2, threads_per_worker=1, memory_limit='1GB')
+client = Client(n_workers=2, threads_per_worker=1, memory_limit='4GB')
 
 
 def send_email(destination, subject, body):
