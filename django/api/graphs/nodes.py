@@ -7,4 +7,3 @@ def sum_csv(file_name):
         'sum': '{:.2f}'.format(df['amount EUR'].sum().compute()),
         'lines': df.shape[0].compute(),
     }
-
