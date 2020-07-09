@@ -1,4 +1,3 @@
-# Start with a large python base image that includes gcc and other libraries
 FROM python:3 as python-base
 COPY requirements.txt .
 RUN pip install -r requirements.txt
@@ -12,3 +11,5 @@ ENTRYPOINT ["/usr/bin/dumb-init", "--"]
 
 # Run our app
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+
+
