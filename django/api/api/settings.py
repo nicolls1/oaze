@@ -112,6 +112,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/3.0/howto/static-files/
 
 STATIC_URL = '/static/'
+STATIC_ROOT = '/static/'
 
 # Nginx server is running locally to serve the /djangomedia/ folder on port 8001
 MEDIA_ROOT = os.environ.get('MEDIA_ROOT', '/djangomedia/')

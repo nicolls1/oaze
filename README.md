@@ -1,4 +1,4 @@
-# Oaze challenge
+# Challenge
 
 ## Development task
 
@@ -14,8 +14,6 @@ Following the recent scandal with Wirecard, we would like to dedicate the develo
 
 Notification content: 
 "{date:dd/mm/yyyy hh24:mm} - {X} entries processed, sum: { sum of amount }"
-
-#### Preffered programming language: Python
 
 # Solution
 
