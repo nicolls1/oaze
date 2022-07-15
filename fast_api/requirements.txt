@@ -1,6 +1,6 @@
 bokeh==2.1.1
 dask[complete]==2.19.0
-distributed==2.19.0
+distributed==2021.10.0
 fastapi==0.58.0
 fastapi-mail==0.2.5
 python-multipart==0.0.5
